@@ -12,6 +12,7 @@ class Settings(BaseSettings):
     OPENAI_API_KEY: str
     OPENAI_API_BASE: str
     LLM_MODEL: str = "gpt-4o"
+    EMBEDDING_MODEL: str
 
     # PostgreSQL Settings
     POSTGRES_USER: str = "postgres"  # Changed default to match your config
