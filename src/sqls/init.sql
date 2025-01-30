@@ -10,7 +10,7 @@ CREATE TABLE IF NOT EXISTS odoo_docs (
     title varchar not null,
     content text not null,
     metadata jsonb not null default '{}'::jsonb,
-    embedding vector(1536),
+    embedding vector(768),
     created_at timestamp with time zone default timezone('utc'::text, now()) not null,
     unique(url, chunk_number, version)
 );
@@ -25,7 +25,7 @@ USING gin (metadata);
 
 -- Create search function
 CREATE OR REPLACE FUNCTION search_odoo_docs(
-    query_embedding vector(1536),
+    query_embedding vector(768),
     version_num integer,
     match_limit integer
 )

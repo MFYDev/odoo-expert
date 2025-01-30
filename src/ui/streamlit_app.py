@@ -65,6 +65,9 @@ class StreamlitUI:
                 response_placeholder = st.empty()
                 response_placeholder.markdown("Searching documentation...")
 
+            query = await self.chat_service.generate_translation(query)
+            print('Translate in English:', query)
+
             # Get relevant chunks
             chunks = await self.chat_service.retrieve_relevant_chunks(query, version)
             
@@ -88,14 +91,20 @@ class StreamlitUI:
                     stream=True
                 )
                 
-                async for chunk in response:
-                    # Add more robust error checking
-                    if chunk and hasattr(chunk, 'choices') and chunk.choices:
-                        delta = chunk.choices[0].delta
-                        if hasattr(delta, 'content') and delta.content:
-                            full_response += delta.content
-                            response_placeholder.markdown(full_response)
-                    
+                # async for chunk in response:
+                #     # Add more robust error checking
+                #     if chunk and hasattr(chunk, 'choices') and chunk.choices:
+                #         delta = chunk.choices[0].delta
+                #         if hasattr(delta, 'content') and delta.content:
+                #             full_response += delta.content
+                #             response_placeholder.markdown(full_response)
+
+                for i, generations in enumerate(response.generations):
+                    for generation in generations:
+                        print(generation.text)
+                        full_response += generation.text
+                        response_placeholder.markdown(full_response)
+
                 if full_response:
                     # Add to conversation history only if we got a valid response
                     st.session_state.conversation_history.append({

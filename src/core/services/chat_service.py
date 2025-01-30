@@ -4,6 +4,7 @@ from src.core.services.embedding import EmbeddingService
 from src.core.services.db_service import DatabaseService
 from src.config.settings import settings
 from src.utils.logging import logger
+from langchain_ollama import OllamaLLM
 
 class ChatService:
     def __init__(
@@ -13,6 +14,7 @@ class ChatService:
         embedding_service: EmbeddingService
     ):
         self.openai_client = openai_client
+        self.ollama_llm = OllamaLLM(model=settings.LLM_MODEL)
         self.db_service = db_service
         self.embedding_service = embedding_service
 
@@ -20,7 +22,7 @@ class ChatService:
         self,
         query: str,
         version: int,
-        limit: int = 6
+        limit: int = 3
     ) -> List[Dict]:
         try:
             query_embedding = await self.embedding_service.get_embedding(query)
@@ -63,38 +65,67 @@ class ChatService:
     ):
         """Generate AI response based on query and context."""
         try:
-            messages = [
-                {
-                    "role": "system",
-                    "content": settings.SYSTEM_PROMPT
-                }
-            ]
+            # messages = [
+            #     {
+            #         "role": "system",
+            #         "content": settings.SYSTEM_PROMPT
+            #     }
+            # ]
+            #
+            # if conversation_history:
+            #     history_text = "\n".join([
+            #         f"User: {msg['user']}\nAssistant: {msg['assistant']}"
+            #         for msg in conversation_history[-3:]
+            #     ])
+            #     messages.append({
+            #         "role": "user",
+            #         "content": f"Previous conversation:\n{history_text}"
+            #     })
+            #
+            # messages.append({
+            #     "role": "user",
+            #     "content": f"Question: {query}\n\nRelevant documentation:\n{context}"
+            # })
             
+            # response = await self.openai_client.chat.completions.create(
+            #     model=settings.LLM_MODEL,
+            #     messages=messages,
+            #     stream=stream
+            # )
+            #
+            # if stream:
+            #     return response
+            # return response.choices[0].message.content
+
+            messages = []
+            if settings.SYSTEM_PROMPT:
+                messages.append(f"System Prompt: {settings.SYSTEM_PROMPT}")
             if conversation_history:
                 history_text = "\n".join([
                     f"User: {msg['user']}\nAssistant: {msg['assistant']}"
                     for msg in conversation_history[-3:]
                 ])
-                messages.append({
-                    "role": "user",
-                    "content": f"Previous conversation:\n{history_text}"
-                })
-            
-            messages.append({
-                "role": "user",
-                "content": f"Question: {query}\n\nRelevant documentation:\n{context}"
-            })
-            
-            response = await self.openai_client.chat.completions.create(
-                model=settings.LLM_MODEL,
-                messages=messages,
-                stream=stream
-            )
-            
-            if stream:
-                return response
-            return response.choices[0].message.content
+                messages.append(f"Previous conversation:\n{history_text}")
+            messages.append(f"Question: {query}\n\nRelevant documentation:\n{context}")
+            print(messages)
+            response = await self.ollama_llm.agenerate(messages, stream=stream)
+            print(response)
+
+            return response
             
         except Exception as e:
             logger.error(f"Error generating response: {e}")
+            raise
+
+    async def generate_translation(
+        self,
+        query: str,
+    ):
+        try:
+            messages = [f"Translate the following sentence in English Only: {query}"]
+            response = await self.ollama_llm.ainvoke(messages)
+            return response
+
+        except Exception as e:
+            logger.error(f"Error generating translation: {e}")
             raise
