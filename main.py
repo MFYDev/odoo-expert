@@ -10,17 +10,14 @@ from src.processing.file_update_handler import FileUpdateHandler
 from src.core.services.embedding import EmbeddingService
 from src.core.services.db_service import DatabaseService
 from src.config.settings import settings
-from openai import AsyncOpenAI
+from src.config.model_provider import ModelProvider
 from src.utils.logging import logger
 
 async def process_documents(base_dir: str):
     """Process markdown documents to embeddings"""
-    openai_client = AsyncOpenAI(
-        api_key=settings.OPENAI_API_KEY,
-        base_url=settings.OPENAI_API_BASE
-    )
+    model_provider = ModelProvider()
     db_service = DatabaseService()
-    embedding_service = EmbeddingService(openai_client)
+    embedding_service = EmbeddingService(model_provider.embed_model)
     processor = DocumentProcessor(db_service, embedding_service)
     await processor.process_directory(base_dir)
 
@@ -50,13 +47,10 @@ async def check_updates(raw_dir: str, markdown_dir: str):
     Returns:
         Added, modified, removed files
     """
-    openai_client = AsyncOpenAI(
-        api_key=settings.OPENAI_API_KEY,
-        base_url=settings.OPENAI_API_BASE
-    )
+    model_provider = ModelProvider()
     
     db_service = DatabaseService()
-    embedding_service = EmbeddingService(openai_client)
+    embedding_service = EmbeddingService(model_provider.embed_model)
     document_processor = DocumentProcessor(db_service, embedding_service)
     markdown_converter = MarkdownConverter()
     
