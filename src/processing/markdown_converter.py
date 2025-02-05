@@ -9,6 +9,7 @@ from langchain_text_splitters import (
     MarkdownHeaderTextSplitter,
     RecursiveCharacterTextSplitter
 )
+from src.config.settings import settings
 from src.utils.logging import logger
 
 class MarkdownConverter:
@@ -31,7 +32,7 @@ class MarkdownConverter:
         base_path = Path(base_dir)
         # If output_dir is not provided, use the default path
         output_path = Path(output_dir if output_dir is not None else base_path / 'markdown')
-        versions = ['16.0', '17.0', '18.0']
+        versions = settings.odoo_versions_list
         
         for version in versions:
             source_dir = base_path / 'versions' / version / 'content'

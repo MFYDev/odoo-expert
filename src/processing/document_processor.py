@@ -121,7 +121,7 @@ class DocumentProcessor:
         progress = self._load_progress()
         
         try:
-            version_dirs = ['16.0', '17.0', '18.0']
+            version_dirs = settings.odoo_versions_list
             for version_str in version_dirs:
                 version = int(float(version_str) * 10)
                 version_path = Path(base_directory) / "versions" / version_str

@@ -8,6 +8,7 @@ import json
 from src.utils.logging import logger
 from src.processing.markdown_converter import MarkdownConverter
 from src.processing.document_processor import DocumentProcessor
+from src.config.settings import settings
 
 class FileUpdateHandler:
     def __init__(
@@ -86,7 +87,7 @@ class FileUpdateHandler:
 
         # Scan current files
         logger.info("Starting file scan...")
-        for version in ['16.0', '17.0', '18.0']:
+        for version in settings.odoo_versions_list:
             version_path = Path(raw_dir) / 'versions' / version / 'content'
             if not version_path.exists():
                 continue
