@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import StreamingResponse
-from openai import AsyncOpenAI
+from src.config.model_provider import ModelProvider
 from src.core.services.db_service import DatabaseService
 from src.api.models.chat import ChatRequest, ChatResponse
 from src.api.dependencies.auth import verify_token
@@ -13,14 +13,11 @@ router = APIRouter()
 
 # Create dependency for services
 async def get_services():
-    openai_client = AsyncOpenAI(
-        api_key=settings.OPENAI_API_KEY,
-        base_url=settings.OPENAI_API_BASE
-    )
+    model_provider = ModelProvider()
     
     db_service = DatabaseService()
-    embedding_service = EmbeddingService(openai_client)
-    chat_service = ChatService(openai_client, db_service, embedding_service)
+    embedding_service = EmbeddingService(model_provider.embed_model)
+    chat_service = ChatService(model_provider.llm, db_service, embedding_service)
     
     return chat_service
 

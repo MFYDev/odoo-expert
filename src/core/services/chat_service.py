@@ -1,5 +1,6 @@
 from typing import List, Dict, Optional, Tuple
-from openai import AsyncOpenAI
+from llama_index.llms.ollama.base import Ollama
+from llama_index.core.llms import ChatMessage, MessageRole
 from src.core.services.embedding import EmbeddingService
 from src.core.services.db_service import DatabaseService
 from src.config.settings import settings
@@ -8,11 +9,11 @@ from src.utils.logging import logger
 class ChatService:
     def __init__(
         self,
-        openai_client: AsyncOpenAI,
+        llm: Ollama,
         db_service: DatabaseService,
         embedding_service: EmbeddingService
     ):
-        self.openai_client = openai_client
+        self.llm = llm
         self.db_service = db_service
         self.embedding_service = embedding_service
 
@@ -63,37 +64,32 @@ class ChatService:
     ):
         """Generate AI response based on query and context."""
         try:
-            messages = [
-                {
-                    "role": "system",
-                    "content": settings.SYSTEM_PROMPT
-                }
-            ]
+            messages = [ChatMessage(
+                role=MessageRole.SYSTEM,
+                content=settings.SYSTEM_PROMPT,
+            )]
             
             if conversation_history:
                 history_text = "\n".join([
                     f"User: {msg['user']}\nAssistant: {msg['assistant']}"
                     for msg in conversation_history[-3:]
                 ])
-                messages.append({
-                    "role": "user",
-                    "content": f"Previous conversation:\n{history_text}"
-                })
-            
-            messages.append({
-                "role": "user",
-                "content": f"Question: {query}\n\nRelevant documentation:\n{context}"
-            })
-            
-            response = await self.openai_client.chat.completions.create(
-                model=settings.LLM_MODEL,
-                messages=messages,
-                stream=stream
-            )
-            
+                messages.append(ChatMessage(
+                    role=MessageRole.USER,
+                    content=f"Previous conversation:\n{history_text}",
+                ))
+
+            messages.append(ChatMessage(
+                role=MessageRole.USER,
+                content=f"Question: {query}\n\nRelevant documentation:\n{context}",
+            ))
+
             if stream:
-                return response
-            return response.choices[0].message.content
+                response_stream = await self.llm.astream_chat(messages)
+                return response_stream
+            else:
+                response = self.llm.chat(messages)
+                return response.message.content
             
         except Exception as e:
             logger.error(f"Error generating response: {e}")
