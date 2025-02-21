@@ -7,11 +7,26 @@ class Settings(BaseSettings):
     API_VERSION: str = "0.0.1"
     API_TITLE: str = "Odoo Expert API"
     API_DESCRIPTION: str = "API for querying Odoo documentation with RAG-powered responses"
-    
+
+    # The provider for the AI models to use.
+    MODEL_PROVIDER: str = "openai"
+
+    # Ollama Settings
+    OLLAMA_BASE_URL: str
+    OLLAMA_REQUEST_TIMEOUT: int
+
+    # The name of LLM model to use.
+    MODEL: str = "gpt-4o"
+
+    # Name of the embedding model to use.
+    EMBEDDING_MODEL: str = "text-embedding-3-small"
+
+    # Dimension of the embedding model to use.
+    EMBEDDING_DIM: int = 1024
+
     # OpenAI Settings
-    OPENAI_API_KEY: str
-    OPENAI_API_BASE: str
-    LLM_MODEL: str = "gpt-4o"
+    OPENAI_API_KEY: str = ""
+    OPENAI_API_BASE: str = ""
 
     # PostgreSQL Settings
     POSTGRES_USER: str = "postgres"

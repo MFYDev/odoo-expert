@@ -1,5 +1,6 @@
 import sys
 from pathlib import Path
+from typing import Dict
 
 # Add project root to Python path
 project_root = Path(__file__).parent.parent.parent
@@ -11,24 +12,22 @@ from datetime import datetime
 from src.core.services.chat_service import ChatService
 from src.core.services.embedding import EmbeddingService
 from src.config.settings import settings
+from src.config.model_provider import ModelProvider
 from src.utils.logging import logger
-from openai import AsyncOpenAI
 from src.core.services.db_service import DatabaseService
 
 class StreamlitUI:
     def __init__(self):
-        self.openai_client = AsyncOpenAI(
-            api_key=settings.OPENAI_API_KEY,
-            base_url=settings.OPENAI_API_BASE
-        )
+        model_provider = ModelProvider()
+
         self.db_service = DatabaseService()
-        self.embedding_service = EmbeddingService(self.openai_client)
+        self.embedding_service = EmbeddingService(model_provider.embed_model)
         self.chat_service = ChatService(
-            self.openai_client,
+            model_provider.llm,
             self.db_service,
             self.embedding_service
         )
-    
+
     async def cleanup(self):
         """Cleanup resources."""
         if hasattr(self, 'db_service'):
@@ -87,14 +86,11 @@ class StreamlitUI:
                     conversation_history=st.session_state.conversation_history,
                     stream=True
                 )
-                
+
                 async for chunk in response:
-                    # Add more robust error checking
-                    if chunk and hasattr(chunk, 'choices') and chunk.choices:
-                        delta = chunk.choices[0].delta
-                        if hasattr(delta, 'content') and delta.content:
-                            full_response += delta.content
-                            response_placeholder.markdown(full_response)
+                    full_response += chunk.delta
+                    response_placeholder.markdown(chunk.message.content)
+                response_placeholder.markdown(full_response)
                     
                 if full_response:
                     # Add to conversation history only if we got a valid response
